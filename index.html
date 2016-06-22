@@ -1,0 +1,50 @@
+<!DOCTYPE HTML>
+<html>
+	<head>
+		<meta charset = "utf-8">
+		<title>Test page</title>
+		<style>
+			p{
+				font-size: 40px;
+			}
+			.tillana{
+				
+				font-family: 'Tillana', Arial, cursive;
+			}
+			.tillana-2{
+				font-size: 40px;
+				font-family: 'Tillana2', Arial, cursive;
+			}
+		</style>
+		<script type="text/javascript" src="flof.js"></script>
+
+		<script type="text/javascript">
+			flof([
+				{
+					css: "css/font-tillana",
+					loading: function(){
+						console.log("file is loading")
+					},
+					ready: function(){
+						console.log("ready");
+					},
+					error: function(){
+						console.log("erro bruto");
+					},
+					update: 60,
+					storage: "local"
+					
+				}
+			]);
+		</script>
+		<noscript><link rel="stylesheet" href="font-tillana.css"></noscript>
+		<link href="https://fonts.googleapis.com/css?family=Tillana:400" rel="stylesheet">
+	</head>
+
+	<body>
+		<p class="tillana-2">Font family from web storage</span></p>
+		<p class="tillana">Font family from CSS link</p>
+	</body>
+</html>
+
+
