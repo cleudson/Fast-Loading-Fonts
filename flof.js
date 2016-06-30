@@ -1,3 +1,7 @@
+/**
+ * @fileoverview utilities for load css asynchronously or from web storage
+ * @author cleudsoncunha@gmail.com | https://github.com/cleudson (Cleudson Cunha)
+ */
 (function(_localStorage, _sessionStorage){
 	var flof = function(sheets){
 		"use strict";
@@ -22,22 +26,44 @@
 				}
 			}
 		}
+		/**
+	      * @desc cleans local storage
+	      * @param object key updateEntry - key that references update time
+	      * @param object key targetConten - key that references css content
+	    */
 		function cleanLocal(updateEntry, targetContent){
 			delete _localStorage[updateEntry];
 			delete _localStorage[targetContent];
-		}				
+		}
+		/**
+	      * @desc general function to create event listener
+	      * @param object elem - element that will receive listener
+	      * @param string event - event type
+	      * @param function func - function that will called on event
+	    */				
 		function addEventListener(elem, event, func) {
 	        elem.addEventListener ? elem.addEventListener(event, func, false) : elem.attachEvent && elem.attachEvent("on" + event, func)
 	    }
-
+	    /**
+	      * @desc appends elements o hmtl head tag
+	      * @param object elem - html node that will be appended
+	    */	
 	    function appendOnHead (elem){
 	    	document.getElementsByTagName("head")[0].appendChild(elem);
 	    }
+	    /**
+	      * @desc inserts style tag with css content
+	      * @param string cssContent - css rules on style tag
+	    */	
 	    function insertStyleNode(cssContent) {
 	        var styleNode = document.createElement("style");
 	        styleNode.innerHTML = cssContent;
 	        appendOnHead(styleNode);
 	    }
+	    /**
+	      * @desc inserts link tag with css url
+	      * @param string cssUrl - URL of the css file
+	    */	
 	    function insertLinkNode(cssUrl){
 	    	var linkElement = document.createElement("link");
             linkElement.href = cssUrl;
@@ -45,20 +71,23 @@
             linkElement.type = "text/css";
             appendOnHead(linkElement);
 	    }
+	    /**
+	      * @desc check if callback exists and can be called
+	      * @param function callback - function that will be called
+	    */	
 	    function checkCallback (callback){
 	    	if(callback && (typeof callback === "function")) {
 	    		callback();
 	    	}
 	    }
-
+	    /**
+	      * @desc brings stylesheets content or url to document
+	    */	
 			
 	    function getStyleSheet() {
 			sheetsIndex = ++sheetsIndex || 0;
 	    	if(sheetsIndex < stylesheets.length){
-	    		
-
 			    var cssUrl = (stylesheets[sheetsIndex]["css"] || stylesheets[sheetsIndex]).toString().replace(".css", "") + ".css";
-
 			    var updateTime = Math.abs(stylesheets[sheetsIndex]["update"]);
 			    var chosenStorage = stylesheets[sheetsIndex]["storage"];
 			    var storageType = (chosenStorage === "local") ? _localStorage : ((chosenStorage === false) ? false : _sessionStorage);
