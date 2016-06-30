@@ -5,13 +5,21 @@
 (function(_localStorage, _sessionStorage){
 	var flof = function(sheets){
 		"use strict";
+		// asserts if web storage is available
 		var canStore = (_localStorage && _sessionStorage) != null;
+		// capture the way the arguments is passed
 		var regArg = /(\[object )(.*)(\])/i;
 		var argType = regArg.exec(Object.prototype.toString.call( sheets ))[2];
 		var stylesheets = (argType === "Array") ? sheets : ((argType === "Object") ? [sheets] : arguments);
+		// interator of sheets
 		var sheetsIndex;
+		// prefixx for update time
 		var updatePreffix = "Update_";
+		// actual time
 		var now = new Date();
+		/**
+	      * @desc checks if the css information on local storage must be renewed
+	    */
 		function checkUpdate () {
 			if (_localStorage.length){
 		    	for(var key in _localStorage){
@@ -89,11 +97,14 @@
 	    	if(sheetsIndex < stylesheets.length){
 			    var cssUrl = (stylesheets[sheetsIndex]["css"] || stylesheets[sheetsIndex]).toString().replace(".css", "") + ".css";
 			    var updateTime = Math.abs(stylesheets[sheetsIndex]["update"]);
+			    // storage type choosen by the developer
 			    var chosenStorage = stylesheets[sheetsIndex]["storage"];
+			    // sets if the web storage will local, session or not allowed
 			    var storageType = (chosenStorage === "local") ? _localStorage : ((chosenStorage === false) ? false : _sessionStorage);
 			    var cssContent;
-
+			    // if web storage exists and the storage is allowed
 		        if (canStore && storageType){
+		        	// if the stylesheet content is already in storage
 		            if (storageType[cssUrl]) {
 		            	insertStyleNode(storageType[cssUrl]);
 		            	getStyleSheet();
@@ -102,14 +113,14 @@
 		            	// first time adds css link calling
 		            	if(!_localStorage["flofActive"] && !_sessionStorage["flofActive"]){
 		            		insertLinkNode(cssUrl);
-		            		storageType["flofActive"] = "true";
 		            	}
-		            	// second time adds css inside style tag
+		            	// second time adds css inside style tag, creating a xhr request
 		            	else{
 			                var request = new XMLHttpRequest;
 			                request.open("GET", cssUrl, true);
 			                var i = sheetsIndex;
 			                addEventListener(request, "load", function() {
+			                	// request is successfull
 			                    if(request.readyState === 4 && request.status < 400){
 		                    		cssContent = request.responseText;
 		                    		storageType[cssUrl] = cssContent;
@@ -142,6 +153,10 @@
 		            // call next stylesheet
 		            getStyleSheet();
 		        }
+			}
+			// all loops ocurred
+			else{
+				storageType["flofActive"] = "true";
 			}
 
 	    };
