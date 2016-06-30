@@ -1,28 +1,31 @@
-(function(){
+(function(_localStorage, _sessionStorage){
 	var flof = function(sheets){
 		"use strict";
-		var canStore = (window.localStorage && window.sessionStorage) != null;
+		var canStore = (_localStorage && _sessionStorage) != null;
 		var regArg = /(\[object )(.*)(\])/i;
 		var argType = regArg.exec(Object.prototype.toString.call( sheets ))[2];
 		var stylesheets = (argType === "Array") ? sheets : ((argType === "Object") ? [sheets] : arguments);
 		var sheetsIndex;
 		var updatePreffix = "Update_";
 		var now = new Date();
-		function checkUpdate ( storageType ) {
-			if (storageType.length){
-		    	for(var key in storageType){
+		function checkUpdate () {
+			if (_localStorage.length){
+		    	for(var key in _localStorage){
 		    		if(key.indexOf(updatePreffix) != -1){
 		    			var updateEntry = key;
 		    			var updateContent = key.toString().replace(updatePreffix,"");
-		    			var updateDateTime = new Date(parseInt(storageType[key]));
+		    			var updateDateTime = new Date(parseInt(_localStorage[key]));
 		    			if(updateDateTime < now ){
-		    				delete storageType[updateEntry];
-		    				delete storageType[updateContent];
+		    				cleanLocal(updateEntry, updateContent);
 		    			}
 		    		}
 				}
 			}
 		}
+		function cleanLocal(updateEntry, targetContent){
+			delete _localStorage[updateEntry];
+			delete _localStorage[targetContent];
+		}				
 		function addEventListener(elem, event, func) {
 	        elem.addEventListener ? elem.addEventListener(event, func, false) : elem.attachEvent && elem.attachEvent("on" + event, func)
 	    }
@@ -35,14 +38,16 @@
 	        styleNode.innerHTML = cssContent;
 	        appendOnHead(styleNode);
 	    }
+	    function insertLinkNode(cssUrl){
+	    	var linkElement = document.createElement("link");
+            linkElement.href = cssUrl;
+            linkElement.rel = "stylesheet";
+            linkElement.type = "text/css";
+            appendOnHead(linkElement);
+	    }
 	    function checkCallback (callback){
 	    	if(callback && (typeof callback === "function")) {
-	    		if(!canStore && callback === ("error" || "loading")){
-	    			console("This Browser do not supports Browser Storage. 'Error' or 'loading' are not allowed.");
-	    		}
-	    		else{
-	    			callback();
-	    		}
+	    		callback();
 	    	}
 	    }
 
@@ -55,56 +60,64 @@
 			    var cssUrl = (stylesheets[sheetsIndex]["css"] || stylesheets[sheetsIndex]).toString().replace(".css", "") + ".css";
 
 			    var updateTime = Math.abs(stylesheets[sheetsIndex]["update"]);
-			    var storageType = stylesheets[sheetsIndex]["storage"] === "local" ? window.localStorage : window.sessionStorage;
+			    var chosenStorage = stylesheets[sheetsIndex]["storage"];
+			    var storageType = (chosenStorage === "local") ? _localStorage : ((chosenStorage === false) ? false : _sessionStorage);
 			    var cssContent;
 
-		        if (canStore){
+		        if (canStore && storageType){
 		            if (storageType[cssUrl]) {
 		            	insertStyleNode(storageType[cssUrl]);
 		            	getStyleSheet();
-
 		            }
 		            else {
-		                var request = new XMLHttpRequest;
-		                request.open("GET", cssUrl, true);
-		                var i = sheetsIndex;
-		                addEventListener(request, "load", function() {
-		                    if(request.readyState === 4){
-		                    	if(request.status < 400){
+		            	// first time adds css link calling
+		            	if(!_localStorage["flofActive"] && !_sessionStorage["flofActive"]){
+		            		insertLinkNode(cssUrl);
+		            		storageType["flofActive"] = "true";
+		            	}
+		            	// second time adds css inside style tag
+		            	else{
+			                var request = new XMLHttpRequest;
+			                request.open("GET", cssUrl, true);
+			                var i = sheetsIndex;
+			                addEventListener(request, "load", function() {
+			                    if(request.readyState === 4 && request.status < 400){
 		                    		cssContent = request.responseText;
-		                    		storageType[updatePreffix + cssUrl] = now.setDate( now.getDate() + ( ( updateTime || 12 )/24 ) );
 		                    		storageType[cssUrl] = cssContent;
 									insertStyleNode(cssContent);
 									checkCallback(stylesheets[i]["ready"]);
-		                    	};
-		                    }
-		                });
-		                addEventListener(request, "loadstart", checkCallback(stylesheets[i]["loading"]));
-		                addEventListener(request, "error", checkCallback(stylesheets[i]["error"]));
-		                request.send();
-		                getStyleSheet();
+									if(storageType === _localStorage){
+										// inserts update time
+										storageType[updatePreffix + cssUrl] = now.setDate( now.getDate() + ( ( updateTime || 6 )/24 ) );
+									}
+									else{
+										// cleans former update time in localstorage
+										cleanLocal((updatePreffix + cssUrl), cssUrl);
+									}
+
+			                    }
+			                    // request error
+			                    else{
+			                    	insertLinkNode(stylesheets[i]["fallback"]);
+			                    }
+			                });
+			                addEventListener(request, "error", checkCallback(stylesheets[i]["error"]));
+			                request.send();
+			                // call next stylesheet
+			                getStyleSheet();
+			            }
 		            }
 		        }
 		        else {
-		            var linkElement = document.createElement("link");
-		            linkElement.href = cssUrl;
-		            linkElement.rel = "stylesheet";
-		            linkElement.type = "text/css";
-		            appendOnHead(linkElement);
-		            checkCallback(stylesheets[i]["loading"]);
-		            checkCallback(stylesheets[i]["ready"]);
-		            checkCallback(stylesheets[i]["error"]);
+		            insertLinkNode(cssUrl);
+		            // call next stylesheet
 		            getStyleSheet();
 		        }
-
 			}
 
 	    };
-		if(canStore){
-			checkUpdate(localStorage);
-			checkUpdate(sessionStorage);
-		};
+		checkUpdate();
 		getStyleSheet(); 
 	};
 	window.flof = flof;
-})();
+})(window.localStorage, window.sessionStorage);

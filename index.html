@@ -21,18 +21,19 @@
 		<script type="text/javascript">
 			flof([
 				{
-					css: "css/font-tillana",
+					css: "css/font-tillana.css",
 					loading: function(){
 						console.log("file is loading")
 					},
-					ready: function(){
-						console.log("ready");
-					},
+					// ready: function(){
+					// 	console.log("ready");
+					// },
 					error: function(){
 						console.log("erro bruto");
 					},
 					update: 60,
-					storage: "local"
+					//storage: false,
+					fallback: "css/font-tillana.css"
 					
 				}
 			]);
